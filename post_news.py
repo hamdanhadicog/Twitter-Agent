@@ -1,0 +1,46 @@
+from Twitter_Agent import TwitterAgent
+from itertools import cycle
+from character import Character
+import time
+import pandas as pd
+import re
+from character import *
+
+def is_arabic(text: str) -> bool:
+    """
+    Returns True if the text contains Arabic characters.
+    """
+    # Arabic Unicode range: \u0600-\u06FF
+    arabic_regex = re.compile(r'[\u0600-\u06FF]')
+    return bool(arabic_regex.search(text))
+
+Twitter_Agent = TwitterAgent()
+
+
+df=pd.read_csv("Last24Hours (1).csv")
+
+for text in df.sample(frac=1)['text']:
+    try:
+        if is_arabic(text):
+            print(f"Posting tweet: {text}")
+            for character in Character.all_characters:
+                try:
+                    print(f"Posting with character: {character.name}")
+
+                    sess = Twitter_Agent.create_twitter_session(   
+                        ct0= character.ct0,
+                        auth_token= character.auth_token,
+                    )
+
+                    Twitter_Agent.create_tweet_with_media(sess, text=text, media_paths=[])
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"An error occurred while posting with {character.name}: {e}")
+                    time.sleep(1)
+            
+            time.sleep(1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        time.sleep(5)
+    time.sleep(1)
+

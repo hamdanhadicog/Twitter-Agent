@@ -8,12 +8,10 @@ import os
 import time
 import base64
 from Twitter_configs import _DEFAULT_UA, BEARER_TOKEN, Feature_Flags
-from Agent_functions import *
 from typing import List, Optional
 
-@dataclass
-class TwitterAgent:
-    def create_twitter_session(self,ct0: str,auth_token: str,user_agent: str = None) -> requests.Session:
+
+def create_twitter_session(ct0: str,auth_token: str,user_agent: str = None) -> requests.Session:
 
         sess = requests.Session()
         # ── Retry on connection errors & 5xx/429 ─────────────────────────────────────
@@ -21,6 +19,7 @@ class TwitterAgent:
 
         adapter = HTTPAdapter(max_retries=retry)
         sess.mount("https://", adapter)
+
         sess.mount("http://", adapter)
         # ─────────────────────────────────────────────────────────────────────────────
 
@@ -45,8 +44,8 @@ class TwitterAgent:
         sess.headers["X-Guest-Token"] = resp.json()["guest_token"] # fetch guest token
         
         return sess
-    
-    def upload_media(self,sess: requests.Session, media_path: str) -> str:
+
+def upload_media(sess: requests.Session, media_path: str) -> str:
 
         mime, _     = mimetypes.guess_type(media_path)
         total_bytes = os.path.getsize(media_path)
@@ -114,9 +113,8 @@ class TwitterAgent:
         )
         resp.raise_for_status()
         return resp.json()["media_id_string"]
-    
-    
-    def create_tweet_with_media(self,sess: requests.Session,text: str,media_paths: list[str]) -> dict:
+
+def create_tweet_with_media(self,sess: requests.Session,text: str,media_paths: list[str]) -> dict:
     
         if not text.strip():
             text = " "
@@ -154,126 +152,3 @@ class TwitterAgent:
         r = sess.post(url, headers=headers, json=payload)
         r.raise_for_status()
         return r.json()
-
-    def is_logged_in(self,sess: requests.Session) -> bool:
-        """Returns True if the session’s cookies authenticate a user."""
-        r = sess.get("https://api.twitter.com/1.1/account/verify_credentials.json")
-        return r.status_code == 200
-    
-    def reply_to_tweet(self,sess: requests.Session,comment: str,reply_to_tweet_id: str,media_paths: list[str] = None) -> dict:
-        
-        FEATURE_FLAGS = Feature_Flags
-
-        # ─── 1) Ensure non‐empty comment ───────────────────────────────────────────
-        if not comment.strip():
-            comment = " "
-
-        # ─── 2) Upload any media, gather media_ids ─────────────────────────────────
-        media_ids: List[str] = []
-        if media_paths:
-            for path in media_paths:
-                media_ids.append(upload_media(sess, path))  # upload_media should return media_id_string
-
-        # ─── 3) Build the GraphQL request body ─────────────────────────────────────
-        variables = {
-            "tweet_text": comment,
-            "dark_request": False,
-            "reply": {
-                "in_reply_to_tweet_id": reply_to_tweet_id,
-                "exclude_reply_user_ids": []
-            },
-            "media": {
-                "media_entities": [
-                    {"media_id": m, "tagged_users": []} for m in media_ids
-                ],
-                "possibly_sensitive": False
-            },
-            "semantic_annotation_ids": [],
-            "disallowed_reply_options": None
-        }
-
-        payload = {
-            "variables": variables,
-            "features": Feature_Flags,
-            #"queryId": QUERY_ID
-        }
-
-        # ─── 4) Send the POST ───────────────────────────────────────────────────────
-        headers = {
-            **sess.headers,
-            "Content-Type":              "application/json",
-            "X-Twitter-Active-User":     "yes",
-            "X-Twitter-Auth-Type":       "OAuth2Session",
-            "X-Twitter-Client-Language": "en",
-            "Referer":                   "https://twitter.com/compose/tweet",
-            "Origin":                    "https://twitter.com",
-        }
-        resp = sess.post(CREATE_TWEET_URL, headers=headers, json=payload)
-        resp.raise_for_status()
-        return resp.json()
-
-    def create_repost(session: requests.Session, tweet_id: str) -> dict:
-        
-        # 1) Build the minimal variables + queryId
-        variables = {
-            "tweet_id":    tweet_id,
-            "dark_request": False
-        }
-        payload = {
-            "variables": variables,
-        #  "queryId":   "ojPdsZsimiJrUGLR1sjUtA"  # your Mutation ID
-        }
-
-        # 2) Compose the request
-        url = "https://twitter.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"
-        headers = {
-            **session.headers,
-            "Content-Type":              "application/json",
-            "X-Twitter-Active-User":     "yes",
-            "X-Twitter-Auth-Type":       "OAuth2Session",
-            "X-Twitter-Client-Language": "en",
-            "Referer":                   "https://twitter.com/home",
-            "Origin":                    "https://twitter.com",
-        }
-
-        # 3) Send it off
-        resp = session.post(url, headers=headers, json=payload)
-        resp.raise_for_status()
-        return resp.json()
-    
-
-#TwitterAgent= TwitterAgent()
-
-# sess1 = TwitterAgent.create_twitter_session(   
-#         ct0=       "18080f65ca2d06911a700e6c922507ee2c76c91add597d556a8f15cc124137af0ae31c6a3e136153411cfa5eea18c0aba54a0dfc42bc7f68ee35bff51f6ed872541534b965b5bd385e064446c8d3ea42",
-#         auth_token= "bb69ebe92c5de404f4abedc835a8e1bd99930c0b",
-#     )
-
-# sess2 = TwitterAgent.create_twitter_session(
-#         ct0='62051c92076f7a3224b23e9aba1e364b9df6f8aa21af089542ae059d911ce471a052291e86a92cdb4940c70c96a906ad64c97bc6e743b3307ced17404fbca62ff10a24830553857151c2803bf084c21d',
-#         auth_token='c0e93871864339828dd082b71ab10bc00d98c22b'
-#     )
-
-# sess3 = TwitterAgent.create_twitter_session(
-#         ct0='6a3e0db72f902d97928364506e1c6b8eec2eece902b088568719c4a91450bf0afbce9d193e4e4aa539538856fbbb3c23fb2af94229bb055278be70335a91a41deae24329cab0ea5ac8a9b53da5bba1d4',
-#         auth_token='55430a75f8a1ff7fa0469a154386471b1a18e417'
-#     )
-
-# sess4 = TwitterAgent.create_twitter_session(
-#         ct0='6a3e0db72f902d97928364506e1c6b8eec2eece902b088568719c4a91450bf0afbce9d193e4e4aa539538856fbbb3c23fb2af94229bb055278be70335a91a41deae24329cab0ea5ac8a9b53da5bba1d4',
-#         auth_token='55430a75f8a1ff7fa0469a154386471b1a18e417'
-#     )
-
-
-# sess = create_twitter_session(
-#         ct0='18080f65ca2d06911a700e6c922507ee2c76c91add597d556a8f15cc124137af0ae31c6a3e136153411cfa5eea18c0aba54a0dfc42bc7f68ee35bff51f6ed872541534b965b5bd385e064446c8d3ea42',
-#         auth_token='bb69ebe92c5de404f4abedc835a8e1bd99930c0b'
-#     )
-
-#to_post='walaaa mish 2aleelll'
-
-#TwitterAgent.create_tweet_with_media(sess1, text=to_post, media_paths=[])
-
-
-
-#TwitterAgent.create_tweet_with_media(sess2, text=to_post, media_paths=[])

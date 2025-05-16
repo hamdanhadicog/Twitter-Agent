@@ -381,3 +381,78 @@ def create_quote_retweet(session, comment, tweet_url=None, media_paths=None):
 
     # 3) send it
     return session.post(CREATE_TWEET_URL, json=body)
+
+
+
+def upload_media2(sess: requests.Session, media_path: str) -> str:
+    """
+    Upload an image or video.  
+    Images: simple base64 → media_id  
+    Videos: INIT/APPEND/FINALIZE chunked flow → media_id
+    """
+    mime, _     = mimetypes.guess_type(media_path)
+    total_bytes = os.path.getsize(media_path)
+
+    if mime and mime.startswith("video"):
+        # INIT
+        init = sess.post(
+            "https://upload.twitter.com/1.1/media/upload.json",
+            data={
+                "command":        "INIT",
+                "media_type":     mime,
+                "total_bytes":    total_bytes,
+                "media_category": "tweet_video"
+            }
+        )
+        init.raise_for_status()
+        media_id = init.json()["media_id_string"]
+
+        # APPEND in 5MB chunks
+        idx = 0
+        with open(media_path, "rb") as f:
+            while True:
+                chunk = f.read(5 * 1024 * 1024)
+                if not chunk:
+                    break
+                part = sess.post(
+                    "https://upload.twitter.com/1.1/media/upload.json",
+                    data={
+                        "command":       "APPEND",
+                        "media_id":      media_id,
+                        "segment_index": idx
+                    },
+                    files={"media": chunk}
+                )
+                part.raise_for_status()
+                idx += 1
+
+        # FINALIZE & poll
+        fin = sess.post(
+            "https://upload.twitter.com/1.1/media/upload.json",
+            data={"command":"FINALIZE","media_id":media_id}
+        )
+        fin.raise_for_status()
+        info = fin.json().get("processing_info", {})
+        state = info.get("state")
+        while state in ("pending","in_progress"):
+            time.sleep(info.get("check_after_secs",5))
+            status = sess.get(
+                "https://upload.twitter.com/1.1/media/upload.json",
+                params={"command":"STATUS","media_id":media_id}
+            )
+            status.raise_for_status()
+            info = status.json().get("processing_info", {})
+            state = info.get("state")
+            if state == "failed":
+                raise RuntimeError(f"Video processing failed: {info}")
+        return media_id
+
+    # IMAGE → base64
+    with open(media_path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    resp = sess.post(
+        "https://upload.twitter.com/1.1/media/upload.json",
+        data={"media_data": b64, "media_category": "tweet_image"}
+    )
+    resp.raise_for_status()
+    return resp.json()["media_id_string"]
