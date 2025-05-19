@@ -212,7 +212,7 @@ class TwitterAgent:
         resp.raise_for_status()
         return resp.json()
 
-    def create_repost(session: requests.Session, tweet_id: str) -> dict:
+    def create_repost(self, session: requests.Session, tweet_id: str) -> dict:
         
         # 1) Build the minimal variables + queryId
         variables = {
@@ -240,3 +240,5 @@ class TwitterAgent:
         resp = session.post(url, headers=headers, json=payload)
         resp.raise_for_status()
         return resp.json()
+
+    

@@ -16,14 +16,17 @@ def is_arabic(text: str) -> bool:
     return bool(arabic_regex.search(text))
 
 # Read characters from CSV
-with open('twitter_tokens.csv', newline='', encoding='utf-8') as csvfile:
+with open('characters.csv', newline='', encoding='utf-8') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         Character(
-            name=row['username'],
+            username=row['username'],
+            name=row['name'],
             description="An AI assistant that helps you with your tasks.",
             ct0=row['ct0'],
-            auth_token=row['auth_token']
+            auth_token=row['auth_token'],
+            password=row['password']
+            
         )
 
 # Optional: Access all characters through the class list
