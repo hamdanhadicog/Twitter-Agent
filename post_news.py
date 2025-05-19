@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import re
 from character import *
+import csv
 
 def is_arabic(text: str) -> bool:
     """
@@ -14,8 +15,23 @@ def is_arabic(text: str) -> bool:
     arabic_regex = re.compile(r'[\u0600-\u06FF]')
     return bool(arabic_regex.search(text))
 
-Twitter_Agent = TwitterAgent()
+# Read characters from CSV
+with open('twitter_tokens.csv', newline='', encoding='utf-8') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        Character(
+            name=row['username'],
+            description="An AI assistant that helps you with your tasks.",
+            ct0=row['ct0'],
+            auth_token=row['auth_token']
+        )
 
+# Optional: Access all characters through the class list
+print(f"Loaded {len(Character.all_characters)} characters")
+
+
+
+Twitter_Agent = TwitterAgent()
 
 df=pd.read_csv("Last24Hours (1).csv")
 

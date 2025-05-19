@@ -8,7 +8,7 @@ import os
 import time
 import base64
 from Twitter_configs import _DEFAULT_UA, BEARER_TOKEN, Feature_Flags
-from Agent_functions import *
+#from Agent_functions import *
 from typing import List, Optional
 
 @dataclass
@@ -240,40 +240,3 @@ class TwitterAgent:
         resp = session.post(url, headers=headers, json=payload)
         resp.raise_for_status()
         return resp.json()
-    
-
-#TwitterAgent= TwitterAgent()
-
-# sess1 = TwitterAgent.create_twitter_session(   
-#         ct0=       "18080f65ca2d06911a700e6c922507ee2c76c91add597d556a8f15cc124137af0ae31c6a3e136153411cfa5eea18c0aba54a0dfc42bc7f68ee35bff51f6ed872541534b965b5bd385e064446c8d3ea42",
-#         auth_token= "bb69ebe92c5de404f4abedc835a8e1bd99930c0b",
-#     )
-
-# sess2 = TwitterAgent.create_twitter_session(
-#         ct0='62051c92076f7a3224b23e9aba1e364b9df6f8aa21af089542ae059d911ce471a052291e86a92cdb4940c70c96a906ad64c97bc6e743b3307ced17404fbca62ff10a24830553857151c2803bf084c21d',
-#         auth_token='c0e93871864339828dd082b71ab10bc00d98c22b'
-#     )
-
-# sess3 = TwitterAgent.create_twitter_session(
-#         ct0='6a3e0db72f902d97928364506e1c6b8eec2eece902b088568719c4a91450bf0afbce9d193e4e4aa539538856fbbb3c23fb2af94229bb055278be70335a91a41deae24329cab0ea5ac8a9b53da5bba1d4',
-#         auth_token='55430a75f8a1ff7fa0469a154386471b1a18e417'
-#     )
-
-# sess4 = TwitterAgent.create_twitter_session(
-#         ct0='6a3e0db72f902d97928364506e1c6b8eec2eece902b088568719c4a91450bf0afbce9d193e4e4aa539538856fbbb3c23fb2af94229bb055278be70335a91a41deae24329cab0ea5ac8a9b53da5bba1d4',
-#         auth_token='55430a75f8a1ff7fa0469a154386471b1a18e417'
-#     )
-
-
-# sess = create_twitter_session(
-#         ct0='18080f65ca2d06911a700e6c922507ee2c76c91add597d556a8f15cc124137af0ae31c6a3e136153411cfa5eea18c0aba54a0dfc42bc7f68ee35bff51f6ed872541534b965b5bd385e064446c8d3ea42',
-#         auth_token='bb69ebe92c5de404f4abedc835a8e1bd99930c0b'
-#     )
-
-#to_post='walaaa mish 2aleelll'
-
-#TwitterAgent.create_tweet_with_media(sess1, text=to_post, media_paths=[])
-
-
-
-#TwitterAgent.create_tweet_with_media(sess2, text=to_post, media_paths=[])
