@@ -26,7 +26,7 @@ character1 = Character(
 character2 = Character(
     name="Ahmad Hashem",
     description="An AI assistant that helps you with your tasks.",
-    ct0="4c6476d7be242bddf58a0db31dce7297a6c6a864f450fe002f7fd3ece5f534379b6d37fec0c49c7d9e2642f1811855939b01191c4f7604d3d90373892eb5fd3ff625c11070759b5a6057fd97c260b582",
+    ct0="a145a5a027edea2ab6fbb6946eb5838d55d04a0448112e4d60fabb0fee04776c636d610f14591b86a53cf4c5bd596c823ab00ecb99cbd9064dfeb22de4619a49b08463e8621f41f0e4ac7f9753e80970",
     auth_token="380065ba1bb86ca2a84d246c8eef912d539ebbb0"
 )
 
@@ -34,16 +34,16 @@ character2 = Character(
 character3 = Character(
     name="Elissa",
     description="An AI assistant that helps you with your tasks.",
-    ct0="3216836d02b70d05172a54ac844bb464c1cd18097909ce21dd1b020388ccd65cf2d6f8ca7359d5a75604fd771b61a4297388e2db8fd9cfac43843f9d24d0e987f54156a7b2f574312410ffe58a7893bb",
-    auth_token="8bbd4679510403c92cd1333da19bb996d80b9732"
+    ct0="a145a5a027edea2ab6fbb6946eb5838d55d04a0448112e4d60fabb0fee04776c636d610f14591b86a53cf4c5bd596c823ab00ecb99cbd9064dfeb22de4619a49b08463e8621f41f0e4ac7f9753e80970",
+    auth_token="689fe83c10643ca607b83fcbe174b60e7dfb51ad"
 )
 
 #Verified
 character4 = Character(
     name="Lara Hamdan",
     description="An AI assistant that helps you with your tasks.",
-    ct0="3d2030a3d6c46f83cea2d2afa673ecf3908c00c0c3550252d5cd45735a75a54f34b5af7419f43205cf639ab1e95e1acca02bede42f6c6139cbdc077ffb2e012ba24a19fe0a17d90eb529923f10320f04",
-    auth_token="4bcaab7557c7d3afc418581bf5770e0e5172aae0"
+    ct0="e4f591c07733e457f257247ec36f133b5f5a9003c72f6d49239acccb5524ddb80f98a392fd68b7abb935aa7bc83abbb4f182ace7ea0e6049b5d044339f3cf85c41ea0b4fdd45bcb8b2da415dbfb719cf",
+    auth_token="179b064a44b6d5ecfa04a61a954a238db1068c8e"
 )
 
 chacharacter5 = Character(
