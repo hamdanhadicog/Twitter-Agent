@@ -52,14 +52,14 @@ for text in df.sample(frac=1)['text']:
                     )
 
                     Twitter_Agent.create_tweet_with_media(sess, text=text, media_paths=[])
-                    time.sleep(1)
+                    time.sleep(30)
                 except Exception as e:
                     print(f"An error occurred while posting with {character.name}: {e}")
-                    time.sleep(1)
+                    time.sleep(30)
             
             time.sleep(1)
     except Exception as e:
         print(f"An error occurred: {e}")
-        time.sleep(5)
-    time.sleep(1)
+        time.sleep(30)
+    time.sleep(30)
 

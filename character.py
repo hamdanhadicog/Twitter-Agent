@@ -17,9 +17,8 @@ class Character:
         # Automatically add the new instance to the list
         self.all_characters.append(self)
 
-    def repost(self, text: str,post_id: str):   
-        """
-        Repost the given text with text.
-        """
+       
+
+        
 
         

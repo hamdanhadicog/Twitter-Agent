@@ -2,9 +2,10 @@ import os
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
-# Set your OpenAI API key
-os.environ["OPENAI_API_KEY"] = "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"
+key="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"
 
+# Set your OpenAI API key
+os.environ["OPENAI_API_KEY"] = key
 # Initialize the model
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5)
 

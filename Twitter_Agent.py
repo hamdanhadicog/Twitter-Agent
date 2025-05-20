@@ -8,8 +8,9 @@ import os
 import time
 import base64
 from Twitter_configs import _DEFAULT_UA, BEARER_TOKEN, Feature_Flags
-#from Agent_functions import *
 from typing import List, Optional
+from character import Character
+import csv
 
 @dataclass
 class TwitterAgent:
@@ -240,5 +241,61 @@ class TwitterAgent:
         resp = session.post(url, headers=headers, json=payload)
         resp.raise_for_status()
         return resp.json()
+    
+    def create_quote_retweet(self,session, comment, tweet_url=None, media_paths=None):
+
+        media_ids = []
+        if media_paths:
+            for path in media_paths:
+                media_ids.append(self.upload_media(session, path))
+
+        # 2) build payload
+        vars_payload = {
+            "tweet_text": comment,
+            "media": {
+                "media_entities": [{"media_id": m} for m in media_ids],
+                "possibly_sensitive": False
+            }
+        }
+        if tweet_url:
+            vars_payload["attachment_url"] = tweet_url
+
+        body = {
+            "variables": vars_payload,
+            "features": Feature_Flags,
+            #"queryId": "dOominYnbOIOpEdRJ7_lHw"
+        }
+
+        # 3) send it
+        return session.post(CREATE_TWEET_URL, json=body)
+
+    #This codes lets each character share a post and write a text for it
+    def repost_campaign(self,text,post_url):
+        # Read characters from CSV
+        with open('characters.csv', newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                Character(
+                    username=row['username'],
+                    name=row['name'],
+                    description="An AI assistant that helps you with your tasks.",
+                    ct0=row['ct0'],
+                    auth_token=row['auth_token'],
+                    password=row['password']
+                    
+                )
+
+        for character in Character.all_characters:
+            sess=self.create_twitter_session(character.ct0,character.auth_token)
+            self.create_quote_retweet(sess,text,tweet_url=post_url)
+            print('1')
+            time.sleep(1)
+
+    
+
+            
+TwitterAgent=TwitterAgent()
+
+TwitterAgent.repost_campaign('askdfaskdjfa;sdkjf','https://x.com/Auto_Porn/status/1924767907168366674')
 
     
