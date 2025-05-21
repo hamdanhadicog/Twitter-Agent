@@ -5,6 +5,7 @@ import time
 import csv
 from Twitter_Agent import TwitterAgent  # Ensure Twitter_Agent.py is in the same directory
 
+
 def login_and_extract_tokens(driver, username, password):
     """Logs into Twitter using Selenium and extracts auth_token and ct0 cookies."""
     try:

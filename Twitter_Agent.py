@@ -11,6 +11,39 @@ from Twitter_configs import _DEFAULT_UA, BEARER_TOKEN, Feature_Flags
 from typing import List, Optional
 from character import Character
 import csv
+from llm import *
+import time
+
+def load_characters_from_csv(file_path='characters.csv'):
+    # Load all characters first
+    all_characters = []
+    
+    with open(file_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            character = Character(
+                username=row['username'],
+                name=row['name'],
+                description="Interested in Politics",
+                ct0=row['ct0'],
+                auth_token=row['auth_token'],
+                password=row['password']
+            )
+            all_characters.append(character)
+
+    # Decide how many characters to pick (between 80% and 100%)
+    total = len(all_characters)
+    if total == 0:
+        return []
+
+    min_sample = int(total * 0.8)
+    max_sample = total
+    sample_size = random.randint(min_sample, max_sample)
+
+    # Randomly choose the subset
+    sampled_characters = random.sample(all_characters, sample_size)
+    
+    return sampled_characters
 
 @dataclass
 class TwitterAgent:
@@ -212,6 +245,37 @@ class TwitterAgent:
         resp = sess.post(CREATE_TWEET_URL, headers=headers, json=payload)
         resp.raise_for_status()
         return resp.json()
+    
+    def like_tweet(self,sess: requests.Session, tweet_id: str) -> dict:
+        """
+        Like (favorite) the given tweet.
+        
+        Args:
+        sess:      a requests.Session already configured with auth headers & cookies
+        tweet_id:  the ID of the tweet to like
+        
+        Returns:
+        The JSON response from Twitter’s FavoriteTweet GraphQL endpoint.
+        """
+        variables = {
+            "tweet_id": tweet_id,
+            "dark_request": False
+        }
+        payload = {
+            "variables": variables,
+        }
+        headers = {
+            **sess.headers,
+            "Content-Type":              "application/json",
+            "X-Twitter-Active-User":     "yes",
+            "X-Twitter-Auth-Type":       "OAuth2Session",
+            "X-Twitter-Client-Language": "en",
+            "Referer":                   "https://twitter.com/",
+            "Origin":                    "https://twitter.com",
+        }
+        resp = sess.post(FAVORITE_TWEET_URL, headers=headers, json=payload)
+        resp.raise_for_status()
+        return resp.json()
 
     def create_repost(self, session: requests.Session, tweet_id: str) -> dict:
         
@@ -272,18 +336,7 @@ class TwitterAgent:
     #This codes lets each character share a post and write a text for it
     def repost_campaign(self,text,post_url):
         # Read characters from CSV
-        with open('characters.csv', newline='', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                Character(
-                    username=row['username'],
-                    name=row['name'],
-                    description="An AI assistant that helps you with your tasks.",
-                    ct0=row['ct0'],
-                    auth_token=row['auth_token'],
-                    password=row['password']
-                    
-                )
+        load_characters_from_csv('characters.csv')
 
         for character in Character.all_characters:
             sess=self.create_twitter_session(character.ct0,character.auth_token)
@@ -291,11 +344,50 @@ class TwitterAgent:
             print('1')
             time.sleep(1)
 
+    def comment_campaign(self,text,post_url):
+        # Read characters from CSV
+        load_characters_from_csv('characters.csv')
+
+        for character in Character.all_characters:
+            sess=self.create_twitter_session(character.ct0,character.auth_token)
+            self.reply_to_tweet(sess,text,post_url)
+            print('1')
+            time.sleep(1)
+
+    def generate_content(self):
+
+        while True:
+
+            try:
+                # Read characters from CSV
+                load_characters_from_csv('characters.csv')
+
+                for character in Character.all_characters:
+                    try:
+
+                        sess=self.create_twitter_session(character.ct0,character.auth_token)
+
+                        text=ContentGenerator.generate_content('Interested in Politics','Arabic')
+
+                        self.create_tweet_with_media(sess, text,[])
+
+                        print(character.name)
+
+                        time.sleep(random.uniform(20, 100))
+
+                    except Exception as e:
+                        print(f"An error occurred while posting with {character.name}: {e}")
+                        time.sleep(30)
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                time.sleep(30)
+            time.sleep(random.uniform(300, 1000))
     
 
-            
+
+
 TwitterAgent=TwitterAgent()
 
-TwitterAgent.repost_campaign('askdfaskdjfa;sdkjf','https://x.com/Auto_Porn/status/1924767907168366674')
+chars=load_characters_from_csv('characters.csv')
 
-    
+
