@@ -593,7 +593,7 @@ class TwitterAgent:
             text = UnifiedSocialGenerator.generate(
                 mode="support",
                 persona_description=character.description,
-                language="Iraqi",
+                language="Iraqi Arabic dialect",
                 text=combined_text
             )
 
