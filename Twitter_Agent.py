@@ -13,21 +13,23 @@ from character import Character
 import csv
 from llm import *
 import time
+import requests
 
 def load_characters_from_csv(file_path='characters.csv'):
     # Load all characters first
     all_characters = []
     
-    with open(file_path, newline='', encoding='utf-8') as csvfile:
+    with open(file_path, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             character = Character(
                 username=row['username'],
                 name=row['name'],
-                description="Interested in Politics",
+                description=['description'],
                 ct0=row['ct0'],
                 auth_token=row['auth_token'],
-                password=row['password']
+                password=row['password'],
+                sources=row['sources'].split(',') if row['sources'] else None
             )
             all_characters.append(character)
 
@@ -36,7 +38,7 @@ def load_characters_from_csv(file_path='characters.csv'):
     if total == 0:
         return []
 
-    min_sample = int(total * 0.8)
+    min_sample = int(total * 0.1)
     max_sample = total
     sample_size = random.randint(min_sample, max_sample)
 
@@ -367,7 +369,12 @@ class TwitterAgent:
 
                         sess=self.create_twitter_session(character.ct0,character.auth_token)
 
-                        text=ContentGenerator.generate_content('Interested in Politics','Arabic')
+                        text=UnifiedSocialGenerator.generate(
+                            mode="content",
+                            persona_description=character.description,
+                            language="Arabic",
+                            content_type="fun"
+                        )
 
                         self.create_tweet_with_media(sess, text,[])
 
@@ -382,12 +389,166 @@ class TwitterAgent:
                 print(f"An error occurred: {e}")
                 time.sleep(30)
             time.sleep(random.uniform(300, 1000))
+
+    def like_campaign(self, tweet_id):  
+        # Read characters from CSV
+        load_characters_from_csv('characters.csv')
+
+        for character in Character.all_characters:
+            print('Like from: ',character.name)
+            sess=self.create_twitter_session(character.ct0,character.auth_token)
+            self.like_tweet(sess,tweet_id)
+            time.sleep(1)   
     
+    def campaing_post(self,tweet_id,post_text):    #The function what is the tweet id 
 
+        # Read characters from CSV
+        load_characters_from_csv('characters.csv')
 
+        #Let the characters like the post
+        # self.like_campaign(tweet_id)
 
-TwitterAgent=TwitterAgent()
+        # #Let the characters comment on the post
+        # for character in Character.all_characters:
+        #     print("Commenting from ",character.name)
+        #     sess=self.create_twitter_session(character.ct0,character.auth_token)
 
-chars=load_characters_from_csv('characters.csv')
+        #     #Get what to respond to the text
+        #     text = UnifiedSocialGenerator.generate(
+        #         mode="comment",
+        #         persona_description=character.description,
+        #         language="Arabic",
+        #         text=post_text
+        #     )
+        #     ##########
 
+        #     self.reply_to_tweet(sess,text,tweet_id)
 
+        #     time.sleep(0.5)
+
+        #Let the characters repost the post
+        for character in Character.all_characters:
+            print("Retweeting ",character.name)
+            sess=self.create_twitter_session(character.ct0,character.auth_token)
+
+            #Get what to respond to the text
+            text = UnifiedSocialGenerator.generate(
+                mode="retweet",
+                persona_description=character.description,
+                language="Arabic",
+                tweet_text=post_text
+            )
+            ##########
+
+            tweet_url = f"https://twitter.com/{character.username}/status/{tweet_id}"
+            self.create_quote_retweet(sess,text,tweet_url=tweet_url)
+            
+            time.sleep(0.5)
+    
+    def campaing_topic(self,topic):   
+
+        # Read characters from CSV
+        load_characters_from_csv('characters.csv')
+
+        for character in Character.all_characters:
+            print("Tweeting about the topic from: ",character.name)
+            sess=self.create_twitter_session(character.ct0,character.auth_token)
+
+            text = UnifiedSocialGenerator.generate(
+                mode="support",
+                persona_description=character.description,
+                language="Arabic",
+                text=topic
+            )
+
+            self.create_tweet_with_media(sess, text,[])
+
+            time.sleep(1)       
+
+    def get_tweet(self,sess: requests.Session, tweet_id: str) -> dict:
+    
+        url = "https://api.twitter.com/1.1/statuses/show.json"
+        params = {
+            "id": tweet_id,
+            "tweet_mode": "extended"   # ensures full_text & extended_entities
+        }
+        resp = sess.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+
+        # get the text
+        text = data.get("full_text") or data.get("text", "")
+
+        # collect any media URLs
+        media_urls = []
+        for m in data.get("extended_entities", {}).get("media", []):
+            mtype = m.get("type")
+            if mtype == "photo":
+                media_urls.append(m.get("media_url_https"))
+            elif mtype in ("video", "animated_gif"):
+                variants = m.get("video_info", {}).get("variants", [])
+                # pick highest‐bitrate mp4
+                mp4s = [v for v in variants if v.get("content_type") == "video/mp4"]
+                if mp4s:
+                    best = max(mp4s, key=lambda v: v.get("bitrate", 0))
+                    media_urls.append(best.get("url"))
+
+        return {"text": text, "media_urls": media_urls}
+         
+    def track_twitter_sources(self):   
+        try: 
+
+            # Read characters from CSV
+            load_characters_from_csv('characters.csv')
+
+            for character in Character.all_characters:
+
+                sess=self.create_twitter_session(character.ct0,character.auth_token)
+
+                tweet_ids = character.get_all_tweet_ids(self,sess)
+
+                #I like posts of all of them
+                for tweet_id in tweet_ids:
+                    
+                    print("Liking from: ",character.name, 'to tweet id: ',tweet_id)
+                    self.like_tweet(sess,tweet_id)
+                    time.sleep(1)
+
+                #I comment on several of the posts randomly 
+                for tweet_id in random.sample(tweet_ids, 2):
+                    tweet=self.get_tweet(sess,tweet_id)['text']
+                    print('The tweet extracted is: ',tweet)
+
+                    text = UnifiedSocialGenerator.generate(
+                        mode="comment",
+                        persona_description=character.description,
+                        language="Iraqi",
+                        text=tweet
+                    )
+
+                    print("Commenting from: ",character.name, 'to tweet id: ',tweet_id)
+                    self.reply_to_tweet(sess,text,tweet_id)
+                    time.sleep(1)
+                
+                #I repost the post and write something about it
+                for tweet_id in random.sample(tweet_ids, 2):
+                    tweet=self.get_tweet(sess,tweet_id)['text']
+                    print('The tweet extracted is: ',tweet)
+
+                    text = UnifiedSocialGenerator.generate(
+                        mode="retweet",
+                        persona_description=character.description,
+                        language="Iraqi",
+                        tweet_text=tweet
+                    )
+                    tweet_url = f"https://twitter.com/{character.username}/status/{tweet_id}"
+                    print("Retweeting from: ",character.name, 'to tweet id: ',tweet_url)
+                    self.create_quote_retweet(sess,text,tweet_url=tweet_url)
+                    time.sleep(1)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            time.sleep(30)
+
+Agent=TwitterAgent()
+
+Agent.track_twitter_sources()

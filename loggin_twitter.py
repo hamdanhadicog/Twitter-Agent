@@ -3,7 +3,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 import time
 import csv
-from Twitter_Agent import TwitterAgent  # Ensure Twitter_Agent.py is in the same directory
+from Twitter_Agent import *  # Ensure Twitter_Agent.py is in the same directory
 
 
 def login_and_extract_tokens(driver, username, password):
@@ -37,7 +37,7 @@ def login_and_extract_tokens(driver, username, password):
 
 def main():
     # Read characters.csv
-    with open('characters.csv', 'r', newline='', encoding='utf-8') as csvfile:
+    with open('characters.csv', 'r', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         rows = list(reader)
         fieldnames = reader.fieldnames  # Includes all original headers
