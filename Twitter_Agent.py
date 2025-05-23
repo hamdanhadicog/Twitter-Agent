@@ -15,6 +15,7 @@ from llm import *
 import time
 import requests
 
+
 def load_characters_from_csv(file_path='characters.csv'):
     # Load all characters first
     all_characters = []
@@ -494,7 +495,32 @@ class TwitterAgent:
                     media_urls.append(best.get("url"))
 
         return {"text": text, "media_urls": media_urls}
-         
+
+    def get_and_combine_tweets(self, sess: requests.Session, tweet_ids: list[str]) -> str:
+        combined_text = ""
+        valid_tweets = []
+
+        # Shuffle the list to ensure randomness
+        random.shuffle(tweet_ids)
+
+        for tweet_id in tweet_ids:
+            if len(valid_tweets) >= 5:
+                break  # Stop after collecting 5 valid tweets
+
+            try:
+                tweet_data = self.get_tweet(sess, tweet_id)
+                tweet_text = tweet_data.get("text")
+                if tweet_text:  # Make sure 'text' is not None or empty
+                    valid_tweets.append(tweet_text)
+                    print(f"✅ Fetched tweet {tweet_id}")
+                else:
+                    print(f"⚠️ Tweet {tweet_id} has no text.")
+            except Exception as e:
+                print(f"❌ Failed to fetch tweet {tweet_id}: {str(e)}")
+
+        combined_text = "\n\n".join(valid_tweets)
+        return combined_text.strip()
+
     def track_twitter_sources(self):   
         try: 
 
@@ -540,6 +566,7 @@ class TwitterAgent:
                         persona_description=character.description,
                         language="Iraqi",
                         tweet_text=tweet
+
                     )
                     tweet_url = f"https://twitter.com/{character.username}/status/{tweet_id}"
                     print("Retweeting from: ",character.name, 'to tweet id: ',tweet_url)
@@ -549,6 +576,32 @@ class TwitterAgent:
             print(f"An error occurred: {e}")
             time.sleep(30)
 
+    def post_about_sources(self):
+        # Read characters from CSV
+        load_characters_from_csv('characters.csv')
+
+        for character in Character.all_characters:
+
+            print("Tweeting about the sources from: ",character.name)
+            sess=self.create_twitter_session(character.ct0,character.auth_token)
+
+            tweet_ids = character.get_all_tweet_ids(self,sess)
+
+            # Get the combined text from the tweets
+            combined_text = self.get_and_combine_tweets(sess, tweet_ids)
+
+            text = UnifiedSocialGenerator.generate(
+                mode="support",
+                persona_description=character.description,
+                language="Iraqi",
+                text=combined_text
+            )
+
+            self.create_tweet_with_media(sess, text,[])
+
+            time.sleep(1)
+
+
 Agent=TwitterAgent()
 
-Agent.track_twitter_sources()
+Agent.post_about_sources()
